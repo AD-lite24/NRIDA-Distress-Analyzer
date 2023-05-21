@@ -6,4 +6,4 @@ Initialize your environment using
 
 `pip install -r requirements.txt`
 
-The model can be downloaded from here 
+The model can be downloaded from the releases section. Modify the path to the file as required
