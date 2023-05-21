@@ -18,6 +18,10 @@ class PotholeAnalyzer():
         self.slices = None
         self.final_bboxes_ortho = []
         self.final_bboxes_dem = []
+        self.volume_max_depth = []
+        self.final_results = []     # Contains the final result
+        self.severity_dict = {0: 'SMALL', 1: 'MEDIUM', 2: 'LARGE'}
+
 
     def analyzer(self):
 
@@ -29,11 +33,77 @@ class PotholeAnalyzer():
             )
         
         print("Number of minimized slices is ", len(self.slices))
-
         self.__detector()
+        print("Number of potholes found is ", len(self.final_bboxes_ortho))
         self.__convert_to_dem_coords()
+        self.__calculate_volume_and_maxdepth()
+        self.__calculate_severity()
+        return self.final_results
 
-    
+    # Use the final bbox dims as well as the max depth and volume to give the final result
+# Use the severity dict to get the labels
+
+    def __calculate_severity(self, volume_max_depth):
+
+        # using final bboxes ortho and not final bboxes dem for consistency across the mm to pixel ratio
+        for i, box in enumerate(self.final_bboxes_ortho):
+
+            xmin, ymin, xmax, ymax = box
+            xlength = xmax - xmin
+            ylength = ymax - ymin
+
+            xlength *= MM_TO_PIXEL
+            ylength *= MM_TO_PIXEL
+
+            width = max(xlength, ylength)
+
+            volume, depth, real_coords = volume_max_depth[i]
+
+            # depth value is in metres so convert to mm
+            depth *= 1000
+
+            # Severity is either small or medium
+            if width >= 500:
+                if depth >= 25 and depth <= 50:
+                    """
+                    Contains:
+                    Volume, Severity Label, real world coordinates
+                    """
+                    self.final_results.append(volume, 1, real_coords)
+
+                elif depth > 50:
+                    self.final_results.append(volume, 2, real_coords)
+                else:
+                    # Classify as medium in undefined edge case
+                    self.final_results.append(volume, 1, real_coords)
+
+            else:
+                # Classify as small in all undefined edge cases in this category
+                self.final_results.append(volume, 0, real_coords)
+
+    def __calculate_volume_and_maxdepth(self):
+
+        for box in self.final_bboxes_dem:
+
+            x_min_dem, y_min_dem, x_max_dem, y_max_dem, x_real, y_real = box
+            sliced_dem = self.dem_array[x_min_dem:x_max_dem, y_min_dem:y_max_dem]
+
+            max_depth = np.max(sliced_dem)
+            min_depth = np.min(sliced_dem)
+
+            # We shall use our min depth as the floor depth
+            volume = 0
+            for i in range(SLICE_SIZE):
+                for j in range(SLICE_SIZE):
+
+                    area = MM_TO_PIXEL*MM_TO_PIXEL
+                    depth_wrt_floor = self.dem_array[i][j] - min_depth
+                    volume += area*depth_wrt_floor
+
+            # contains the volume, the max depth, and the real world coords of the potholes
+            self.volume_max_depth.append(
+                volume, max_depth - min_depth, (x_real, y_real))
+
     def __convert_to_dem_coords(self):
         
         for box in self.final_bboxes_ortho:
@@ -52,15 +122,12 @@ class PotholeAnalyzer():
 
             if label == 7:          # index label of the pothole in the in the model
 
-                print("Found!")
-                print("before scaling: ", xmin, ymin, xmax, ymax)
                 xmin *= image_dim
                 xmax *= image_dim
                 ymin *= image_dim
                 ymax *= image_dim
 
                 xmin, ymin, xmax, ymax = int(xmin), int(ymin), int(xmax), int(ymax)
-                print("after scaling: ", xmin, ymin, xmax, ymax)
 
                 # Get coordinates wrt original orthophoto
                 xmin += xmin_slice
@@ -157,4 +224,7 @@ class PotholeAnalyzer():
 if __name__ == "__main__":
     orthophoto_raster, dem_raster = ''
     pothole_analyser = PotholeAnalyzer(orthophoto_raster, dem_raster)
-    pothole_analyser.analyzer()
+    # Analysis result contains the result in the form of (volume, severity_classification, coordinate)
+    analysis_result = pothole_analyser.analyzer()
+
+    
