@@ -1,6 +1,5 @@
 import numpy as np
-from osgeo import gdal, osr
-import rasterio as rio
+from osgeo import gdal
 import torch
 from tqdm import tqdm
 from utils import coord_converter
@@ -32,6 +31,8 @@ class PotholeAnalyzer():
         print("Number of minimized slices is ", len(self.slices))
 
         self.__detector()
+        self.__convert_to_dem_coords()
+
     
     def __convert_to_dem_coords(self):
         
@@ -76,7 +77,7 @@ class PotholeAnalyzer():
     def __detector(self):
 
         model = torch.hub.load('ultralytics/yolov5', 'custom', path=PATH_TO_MODEL, source='github')
-        for slice in self.slices:
+        for slice in tqdm(self.slices):
             xmin, ymin, xmax, ymax = slice
             sliced_image = self.orthophoto_array[:, xmin:xmax, ymin:ymax]
             result = model(sliced_image)
@@ -152,9 +153,6 @@ class PotholeAnalyzer():
             y_min = y_max - y_overlap
 
         return slice_bboxes
-
-
-    
 
 if __name__ == "__main__":
     orthophoto_raster, dem_raster = ''
