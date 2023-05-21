@@ -4,4 +4,4 @@ Code to analyze and evaluate a pothole's volume as well assign it a severity rat
 
 Initialize your environment using 
 
-$ pip install -r requirements.txt
+`pip install -r requirements.txt`
