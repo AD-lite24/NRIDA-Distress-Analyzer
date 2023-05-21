@@ -3,6 +3,7 @@ from osgeo import gdal, osr
 import rasterio as rio
 import torch
 from tqdm import tqdm
+from utils import coord_converter
 
 SLICE_SIZE = 512
 MM_TO_PIXEL = 3 
@@ -16,8 +17,8 @@ class PotholeAnalyzer():
         self.orthophoto_array = None
         self.dem_array = None
         self.slices = None
-        self.final_bboxes_ortho = None
-        self.final_bboxes_dem = None
+        self.final_bboxes_ortho = []
+        self.final_bboxes_dem = []
 
     def analyzer(self):
 
@@ -31,7 +32,12 @@ class PotholeAnalyzer():
         print("Number of minimized slices is ", len(self.slices))
 
         self.__detector()
-
+    
+    def __convert_to_dem_coords(self):
+        
+        for box in self.final_bboxes_ortho:
+            final_box_dem = coord_converter(box[0], box[1], box[2], box[3])
+            self.final_bboxes_dem.append(final_box_dem)
 
     def __get_check_bbox_coords(self, result, image_dim, slice):
 
@@ -58,11 +64,11 @@ class PotholeAnalyzer():
                 # Get coordinates wrt original orthophoto
                 xmin += xmin_slice
                 ymin += ymin_slice
-                xmax += xmin_slice
-                ymax += ymin_slice
+                xmax += xmax_slice
+                ymax += ymax_slice
 
                 bbox = (xmin, ymin, xmax, ymax)
-                self.final_bboxes.append(bbox)
+                self.final_bboxes_ortho.append(bbox)
 
             else:
                 continue
@@ -74,7 +80,8 @@ class PotholeAnalyzer():
             xmin, ymin, xmax, ymax = slice
             sliced_image = self.orthophoto_array[:, xmin:xmax, ymin:ymax]
             result = model(sliced_image)
-            self.__get_check_bbox_coords(result, sliced_image.shape[0], slice)       # adds the bbox coordinates to the list wrt orthophoto
+            self.__get_check_bbox_coords(result, sliced_image.shape[0], slice)   # adds the bbox coordinates to the list wrt orthophoto
+
 
     def __raster_to_array_converter(self):
         self.orthophoto_array = np.array(self.dataset_orthophoto.ReadAsArray())
