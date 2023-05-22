@@ -22,7 +22,6 @@ class PotholeAnalyzer():
         self.final_results = []     # Contains the final result
         self.severity_dict = {0: 'SMALL', 1: 'MEDIUM', 2: 'LARGE'}
 
-
     def analyzer(self):
         print("Starting.....")
         self.__raster_to_array_converter()
