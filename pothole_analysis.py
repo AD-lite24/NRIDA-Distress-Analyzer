@@ -15,13 +15,12 @@ class PotholeAnalyzer():
         self.dataset_dem = gdal.Open(dem_raster)
         self.orthophoto_array = None
         self.dem_array = None
-        self.slices = None
+        self.slices = None.
         self.final_bboxes_ortho = []
         self.final_bboxes_dem = []
         self.volume_max_depth = []
         self.final_results = []     # Contains the final result
         self.severity_dict = {0: 'SMALL', 1: 'MEDIUM', 2: 'LARGE'}
-
 
     def analyzer(self):
         print("Starting.....")
