@@ -34,10 +34,14 @@ class PotholeAnalyzer():
         print("Number of minimized slices is ", len(self.slices))
         self.__detector()
         print("Number of potholes found is ", len(self.final_bboxes_ortho))
-        self.__convert_to_dem_coords()
-        self.__calculate_volume_and_maxdepth()
-        self.__calculate_severity()
-        return self.final_results
+
+        if len(self.final_bboxes_ortho) != 0:
+            self.__convert_to_dem_coords()
+            self.__calculate_volume_and_maxdepth()
+            self.__calculate_severity()
+            return self.final_results
+        
+        return None
 
     # Use the final bbox dims as well as the max depth and volume to give the final result
 # Use the severity dict to get the labels
@@ -78,7 +82,11 @@ class PotholeAnalyzer():
 
             else:
                 # Classify as small in all undefined edge cases in this category
-                self.final_results.append(volume, 0, real_coords)
+                if depth <= 25:
+                    self.final_results.append(volume, 0, real_coords)
+                else:
+                    self.final_results.append(volume, 1, real_coords)
+
 
     def __calculate_volume_and_maxdepth(self):
 
@@ -227,5 +235,9 @@ if __name__ == "__main__":
     pothole_analyser = PotholeAnalyzer(orthophoto_raster, dem_raster)
     # Analysis result contains the result in the form of (volume, severity_classification, coordinate)
     analysis_result = pothole_analyser.analyzer()
+
+    print("No potholes found on this road stretch") if analysis_result == None else \
+    print ("Process finished!")
+    
 
     
