@@ -31,7 +31,6 @@ class PotholeAnalyzer():
             image_height=self.orthophoto_array.shape[2],
             image_width=self.orthophoto_array.shape[1]
             )
-        
         print("Number of minimized slices is ", len(self.slices))
         self.__detector()
         print("Number of potholes found is ", len(self.final_bboxes_ortho))
@@ -97,7 +96,7 @@ class PotholeAnalyzer():
                 for j in range(SLICE_SIZE):
 
                     area = MM_TO_PIXEL*MM_TO_PIXEL
-                    depth_wrt_floor = self.dem_array[i][j] - min_depth
+                    depth_wrt_floor = sliced_dem[i][j] - min_depth
                     volume += area*depth_wrt_floor
 
             # contains the volume, the max depth, and the real world coords of the potholes
