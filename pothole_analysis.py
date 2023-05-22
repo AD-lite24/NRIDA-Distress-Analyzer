@@ -2,7 +2,7 @@ import numpy as np
 from osgeo import gdal
 import torch
 from tqdm import tqdm
-from utils import coord_converter
+from utilities import coord_converter
 
 SLICE_SIZE = 512
 MM_TO_PIXEL = 3 
@@ -24,12 +24,13 @@ class PotholeAnalyzer():
 
 
     def analyzer(self):
-
+        print("Starting.....")
         self.__raster_to_array_converter()
+        print("Done.")
         self.slices = self.__calculate_slice_bboxes(
             image=self.orthophoto_array,
-            image_height=self.orthophoto_array[2],
-            image_width=self.orthophoto_array[1]
+            image_height=self.orthophoto_array.shape[2],
+            image_width=self.orthophoto_array.shape[1]
             )
         
         print("Number of minimized slices is ", len(self.slices))
@@ -143,6 +144,7 @@ class PotholeAnalyzer():
 
     def __detector(self):
 
+        print("Running the detector model...")
         model = torch.hub.load('ultralytics/yolov5', 'custom', path=PATH_TO_MODEL, source='github')
         for slice in tqdm(self.slices):
             xmin, ymin, xmax, ymax = slice
@@ -152,6 +154,7 @@ class PotholeAnalyzer():
 
 
     def __raster_to_array_converter(self):
+        print("Converting raster to np array (can take a while)....")
         self.orthophoto_array = np.array(self.dataset_orthophoto.ReadAsArray())
         self.dem_array = np.array(self.dataset_dem.ReadAsArray())
         self.orthophoto_array = self.orthophoto_array[0:3, :, :] #remove the alpha band
@@ -194,7 +197,6 @@ class PotholeAnalyzer():
 
             return False
         
-        print(image.shape)
         slice_bboxes = []
         y_max = y_min = 0
         y_overlap = int(overlap_height_ratio * slice_height)
@@ -222,7 +224,8 @@ class PotholeAnalyzer():
         return slice_bboxes
 
 if __name__ == "__main__":
-    orthophoto_raster, dem_raster = ''
+    orthophoto_raster = '../scripts/test_ortho.tif'
+    dem_raster = '../scripts/test_dem.tif'
     pothole_analyser = PotholeAnalyzer(orthophoto_raster, dem_raster)
     # Analysis result contains the result in the form of (volume, severity_classification, coordinate)
     analysis_result = pothole_analyser.analyzer()
