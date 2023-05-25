@@ -98,6 +98,8 @@ class PotholeAnalyzer():
             max_depth = np.max(sliced_dem)
             min_depth = np.min(sliced_dem)
 
+            max_depth_floor = (max_depth - min_depth)*MM_TO_PIXEL
+
             # We shall use our min depth as the floor depth
             volume = 0
             for i in range(SLICE_SIZE):
@@ -109,7 +111,7 @@ class PotholeAnalyzer():
 
             # contains the volume, the max depth, and the real world coords of the potholes
             self.volume_max_depth.append(
-                volume, max_depth - min_depth, (x_real, y_real))
+                volume, max_depth_floor, (x_real, y_real))
 
     def __convert_to_dem_coords(self):
         
