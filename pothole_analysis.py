@@ -4,9 +4,19 @@ import torch
 from tqdm import tqdm
 from utilities import coord_converter
 
+"""
+Input params:
+1. The mm to pixel ratio. It needs to be updated for every road stretch. 
+   the value can be obtained from the survey reports
+2. Input Orhophoto path
+3. Input DEM path
+"""
+
 SLICE_SIZE = 512
-MM_TO_PIXEL = 3 
+MM_TO_PIXEL = 4.11 # Check from report needs to be set everytime
 PATH_TO_MODEL = 'best.pt'
+PATH_TO_ORTHOPHOTO = '../scripts/P2K_ortho.tiff'
+PATH_TO_DEM = '../scripts/P2K_dem.tiff'
 
 class PotholeAnalyzer():
 
@@ -232,11 +242,11 @@ class PotholeAnalyzer():
         return slice_bboxes
 
 if __name__ == "__main__":
-    orthophoto_raster = '../scripts/test_ortho.tif'
-    dem_raster = '../scripts/test_dem.tif'
-    pothole_analyser = PotholeAnalyzer(orthophoto_raster, dem_raster)
+    orthophoto_raster = PATH_TO_ORTHOPHOTO
+    dem_raster = PATH_TO_DEM
+    pothole_analyzer = PotholeAnalyzer(orthophoto_raster, dem_raster)
     # Analysis result contains the result in the form of (volume, severity_classification, coordinate)
-    analysis_result = pothole_analyser.analyzer()
+    analysis_result = pothole_analyzer.analyzer()
 
     print("No potholes found on this road stretch") if analysis_result == None else \
     print ("Process finished!")
