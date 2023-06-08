@@ -9,7 +9,7 @@ def show_image(image, bboxes):
 
     for box in bboxes:
         x_min, y_min, x_max, y_max = box
-        rect = patches.Rectangle((y_min, x_max), x_max - x_min,
+        rect = patches.Rectangle((x_min, y_min), x_max - x_min,
                                  y_max - y_min, linewidth=1, edgecolor='r', facecolor='none')
         ax.add_patch(rect)
 
@@ -54,12 +54,29 @@ def coord_converter(xmin_photo, ymin_photo, xmax_photo, ymax_photo, dataset_phot
     x_proj_max, y_proj_max, _ = coord_transform.TransformPoint(
         x_max_real, y_max_real)
 
-    # Apply the geotransform_photoation to obtain pixel coordinates
-    x_min_dem = int((x_proj_min - geotransform_photo_dem[0]) / geotransform_photo_dem[1])
-    y_min_dem = int((y_proj_min - geotransform_photo_dem[3]) / geotransform_photo_dem[5])
+    td0 = geotransform_photo_dem[0]
+    td1 = geotransform_photo_dem[1]
+    td2 = geotransform_photo_dem[2]
+    td3 = geotransform_photo_dem[3]
+    td4 = geotransform_photo_dem[4]
+    td5 = geotransform_photo_dem[5]
 
-    x_max_dem = int((x_proj_max - geotransform_photo_dem[0]) / geotransform_photo_dem[1])
-    y_max_dem = int((y_proj_max - geotransform_photo_dem[3]) / geotransform_photo_dem[5])
 
+    x_min_dem = int(
+        ((x_proj_min - td0)*td5 - (y_proj_min - td3)*td2)/(td1*td5 - td2*td4)
+    )
+
+    y_min_dem = int(
+        ((x_proj_min - td0)*td4 - (y_proj_min - td3)*td1)/(td2*td4 - td1*td5)
+    )
+
+    x_max_dem = int(
+        ((x_proj_max - td0)*td5 - (y_proj_max - td3)*td2)/(td1*td5 - td2*td4)
+    )
+
+    y_max_dem = int(
+        ((x_proj_max - td0)*td4 - (y_proj_max - td3)*td1)/(td2*td4 - td1*td5)
+    )
+    
     # Note the last two items are the real world coordinates of the centroid of the bbox to identify and locate each pothole
     return x_min_dem, y_min_dem, x_max_dem, y_max_dem, (x_min_real + x_max_real)/2, (y_min_real + y_max_real)/2

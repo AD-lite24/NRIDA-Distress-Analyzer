@@ -15,8 +15,8 @@ Input params:
 SLICE_SIZE = 512
 MM_TO_PIXEL = 4.11 # Check from report needs to be set everytime
 PATH_TO_MODEL = 'best.pt'
-PATH_TO_ORTHOPHOTO = '../scripts/P2K_ortho.tiff'
-PATH_TO_DEM = '../scripts/P2K_dem.tiff'
+PATH_TO_ORTHOPHOTO = '../scripts/B2K_5_ortho.tiff'
+PATH_TO_DEM = '../scripts/Bhagina to Kajra 5 DEM.tif'
 
 class PotholeAnalyzer():
 
@@ -38,8 +38,8 @@ class PotholeAnalyzer():
         print("Done.")
         self.slices = self.__calculate_slice_bboxes(
             image=self.orthophoto_array,
-            image_height=self.orthophoto_array.shape[2],
-            image_width=self.orthophoto_array.shape[1]
+            image_height=self.orthophoto_array.shape[1],
+            image_width=self.orthophoto_array.shape[2]
             )
         print("Number of minimized slices is ", len(self.slices))
         self.__detector()
@@ -53,7 +53,7 @@ class PotholeAnalyzer():
         
         return None
 
-    # Use the final bbox dims as well as the max depth and volume to give the final result
+# Use the final bbox dims as well as the max depth and volume to give the final result
 # Use the severity dict to get the labels
 
     def __calculate_severity(self, volume_max_depth):
@@ -103,17 +103,17 @@ class PotholeAnalyzer():
         for box in self.final_bboxes_dem:
 
             x_min_dem, y_min_dem, x_max_dem, y_max_dem, x_real, y_real = box
-            sliced_dem = self.dem_array[x_min_dem:x_max_dem, y_min_dem:y_max_dem]
+            sliced_dem = self.dem_array[y_min_dem:y_max_dem, x_min_dem:x_max_dem]
 
             max_depth = np.max(sliced_dem)
             min_depth = np.min(sliced_dem)
 
-            max_depth_floor = (max_depth - min_depth)*MM_TO_PIXEL
+            max_depth_floor = (max_depth - min_depth)
 
             # We shall use our min depth as the floor depth
             volume = 0
-            for i in range(SLICE_SIZE):
-                for j in range(SLICE_SIZE):
+            for i in range(sliced_dem.shape[0]):
+                for j in range(sliced_dem.shape[1]):
 
                     area = MM_TO_PIXEL*MM_TO_PIXEL
                     depth_wrt_floor = sliced_dem[i][j] - min_depth
@@ -202,10 +202,10 @@ class PotholeAnalyzer():
 
         def check_garbage_slice(image, xmin, ymin, xmax, ymax):
     
-            corner1 = image[:, xmin-1, ymin-1]
-            corner2 = image[:, xmin-1, ymax-1]
-            corner3 = image[:, xmax-1, ymin-1]
-            corner4 = image[:, xmax-1, ymax-1]
+            corner1 = image[:, ymin-1, xmin-1]
+            corner2 = image[:, ymin-1, xmax-1]
+            corner3 = image[:, ymax-1, xmin-1]
+            corner4 = image[:, ymax-1, xmax-1]
             reject = [255, 255, 255]
             corners = [corner1, corner2, corner3, corner4]
 
