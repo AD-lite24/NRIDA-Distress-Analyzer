@@ -6,7 +6,7 @@ Initialize your environment using
 
 `pip install -r requirements.txt`
 
-or just use the environment.yml file to set up the environment
+or just use the environment.yml file to set up the environment. Ping me if dependencies still give issues. 
 
 The model can be downloaded from the releases section. Modify the path to the file as required
 
