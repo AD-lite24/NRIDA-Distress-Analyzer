@@ -23,7 +23,6 @@ class PotholeAnalyzer():
     def __init__(self, orthophoto_raster, dem_raster) -> None:
         self.dataset_orthophoto = gdal.Open(orthophoto_raster)
         self.dataset_dem = gdal.Open(dem_raster)
-        self.orthophoto_array = None
         self.dem_array = None
         self.slices = None
         self.final_bboxes_ortho = []
@@ -35,11 +34,11 @@ class PotholeAnalyzer():
     def analyzer(self):
         print("Starting.....")
         self.__raster_to_array_converter()
-        print("Done.")
+        print("Slicing the dataset")
         self.slices = self.__calculate_slice_bboxes(
-            image=self.orthophoto_array,
-            image_height=self.orthophoto_array.shape[1],
-            image_width=self.orthophoto_array.shape[2]
+            orthophoto_dataset=self.dataset_orthophoto,
+            image_height=self.dataset_orthophoto.RasterYSize,
+            image_width=self.dataset_orthophoto.RasterXSize
             )
         print("Number of minimized slices is ", len(self.slices))
         self.__detector()
@@ -48,7 +47,7 @@ class PotholeAnalyzer():
         if len(self.final_bboxes_ortho) != 0:
             self.__convert_to_dem_coords()
             self.__calculate_volume_and_maxdepth()
-            self.__calculate_severity()
+            self.__calculate_severity(self.volume_max_depth)
             return self.final_results
         
         return None
@@ -82,20 +81,20 @@ class PotholeAnalyzer():
                     Contains:
                     Volume, Severity Label, real world coordinates
                     """
-                    self.final_results.append(volume, 1, real_coords)
+                    self.final_results.append((volume, 1, real_coords))
 
                 elif depth > 50:
-                    self.final_results.append(volume, 2, real_coords)
+                    self.final_results.append((volume, 2, real_coords))
                 else:
                     # Classify as medium in undefined edge case
-                    self.final_results.append(volume, 1, real_coords)
+                    self.final_results.append((volume, 1, real_coords))
 
             else:
                 # Classify as small in all undefined edge cases in this category
                 if depth <= 25:
-                    self.final_results.append(volume, 0, real_coords)
+                    self.final_results.append((volume, 0, real_coords))
                 else:
-                    self.final_results.append(volume, 1, real_coords)
+                    self.final_results.append((volume, 1, real_coords))
 
 
     def __calculate_volume_and_maxdepth(self):
@@ -121,12 +120,12 @@ class PotholeAnalyzer():
 
             # contains the volume, the max depth, and the real world coords of the potholes
             self.volume_max_depth.append(
-                volume, max_depth_floor, (x_real, y_real))
+                (volume, max_depth_floor, (x_real, y_real)))
 
     def __convert_to_dem_coords(self):
         
         for box in self.final_bboxes_ortho:
-            final_box_dem = coord_converter(box[0], box[1], box[2], box[3])
+            final_box_dem = coord_converter(box[0], box[1], box[2], box[3], self.dataset_orthophoto, self.dataset_dem)
             self.final_bboxes_dem.append(final_box_dem)
 
     def __get_check_bbox_coords(self, result, image_dim, slice):
@@ -136,8 +135,7 @@ class PotholeAnalyzer():
         boxes = result.xyxyn[0]
         for box in boxes:
             box = np.array(box)
-            # print(box)
-            xmin, ymin, xmax, ymax, confidence, label = box
+            xmin, ymin, xmax, ymax, _, label = box
 
             if label == 7:          # index label of the pothole in the in the model
 
@@ -166,20 +164,20 @@ class PotholeAnalyzer():
         model = torch.hub.load('ultralytics/yolov5', 'custom', path=PATH_TO_MODEL, source='github')
         for slice in tqdm(self.slices):
             xmin, ymin, xmax, ymax = slice
-            sliced_image = self.orthophoto_array[:, xmin:xmax, ymin:ymax]
+            sliced_image = np.array(self.dataset_orthophoto.ReadAsArray(xmin, ymin, xmax - xmin, ymax - ymin))
             result = model(sliced_image)
             self.__get_check_bbox_coords(result, sliced_image.shape[0], slice)   # adds the bbox coordinates to the list wrt orthophoto
 
 
     def __raster_to_array_converter(self):
         print("Converting raster to np array (can take a while)....")
-        self.orthophoto_array = np.array(self.dataset_orthophoto.ReadAsArray())
         self.dem_array = np.array(self.dataset_dem.ReadAsArray())
-        self.orthophoto_array = self.orthophoto_array[0:3, :, :] #remove the alpha band
+        print('Done.')
+
 
     def __calculate_slice_bboxes(
         self,
-        image,
+        orthophoto_dataset,
         image_height: int,
         image_width: int,
         slice_height: int = SLICE_SIZE,
@@ -200,19 +198,19 @@ class PotholeAnalyzer():
         :return: a list of bounding boxes in xyxy format
         """
 
-        def check_garbage_slice(image, xmin, ymin, xmax, ymax):
-    
-            corner1 = image[:, ymin-1, xmin-1]
-            corner2 = image[:, ymin-1, xmax-1]
-            corner3 = image[:, ymax-1, xmin-1]
-            corner4 = image[:, ymax-1, xmax-1]
-            reject = [255, 255, 255]
+        def check_garbage_slice(dataset, xmin, ymin, xmax, ymax):
+            
+            image = np.array(dataset.ReadAsArray(xmin, ymin, xmax - xmin, ymax - ymin))
+            image = image[0:3, :, :]
+            corner1 = image[:, 0, 0]
+            corner2 = image[:, ymax - ymin - 1, xmax - xmin - 1]
+            corner3 = image[:, 0, xmax - xmin - 1]
+            corner4 = image[:, ymax - ymin - 1, 0]
+            reject = np.array([255, 255, 255])
             corners = [corner1, corner2, corner3, corner4]
-
             for corner in corners:
                 if (corner == reject).all():
                     return True
-
             return False
         
         slice_bboxes = []
@@ -229,11 +227,11 @@ class PotholeAnalyzer():
                     ymax = min(image_height, y_max)
                     xmin = max(0, xmax - slice_width)
                     ymin = max(0, ymax - slice_height)
-                    if not check_garbage_slice(image, xmin, ymin, xmax, ymax):
+                    if not check_garbage_slice(orthophoto_dataset, xmin, ymin, xmax, ymax):
                         slice_bboxes.append([xmin, ymin, xmax, ymax])
 
                 else:
-                    if not check_garbage_slice(image, x_min, y_min, x_max, y_max):
+                    if not check_garbage_slice(orthophoto_dataset, x_min, y_min, x_max, y_max):
                         slice_bboxes.append([x_min, y_min, x_max, y_max])
 
                 x_min = x_max - x_overlap
