@@ -98,6 +98,9 @@ class PotholeAnalyzer():
 
 
     def __calculate_volume_and_maxdepth(self):
+        """
+        Append the volume and maximum depth of the pothole to the list
+        """
 
         for box in self.final_bboxes_dem:
 
@@ -149,8 +152,8 @@ class PotholeAnalyzer():
                 # Get coordinates wrt original orthophoto
                 xmin += xmin_slice
                 ymin += ymin_slice
-                xmax += xmax_slice
-                ymax += ymax_slice
+                xmax += xmin_slice
+                ymax += ymin_slice
 
                 bbox = (xmin, ymin, xmax, ymax)
                 self.final_bboxes_ortho.append(bbox)
