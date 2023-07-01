@@ -149,8 +149,8 @@ class PotholeAnalyzer():
                 # Get coordinates wrt original orthophoto
                 xmin += xmin_slice
                 ymin += ymin_slice
-                xmax += xmax_slice
-                ymax += ymax_slice
+                xmax += xmin_slice
+                ymax += ymin_slice
 
                 bbox = (xmin, ymin, xmax, ymax)
                 self.final_bboxes_ortho.append(bbox)
