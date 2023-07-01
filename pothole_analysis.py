@@ -98,6 +98,9 @@ class PotholeAnalyzer():
 
 
     def __calculate_volume_and_maxdepth(self):
+        """
+        Append the volume and maximum depth of the pothole to the list
+        """
 
         for box in self.final_bboxes_dem:
 
