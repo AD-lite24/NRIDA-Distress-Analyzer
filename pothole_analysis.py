@@ -14,7 +14,7 @@ Input params:
 
 SLICE_SIZE = 512
 MM_TO_PIXEL = 4.11 # Check from report needs to be set everytime
-PATH_TO_MODEL = 'best.pt'
+PATH_TO_MODEL = '../weights/best.pt'
 PATH_TO_ORTHOPHOTO = '../scripts/B2K_5_ortho.tiff'
 PATH_TO_DEM = '../scripts/Bhagina to Kajra 5 DEM.tif'
 
@@ -168,8 +168,9 @@ class PotholeAnalyzer():
         for slice in tqdm(self.slices):
             xmin, ymin, xmax, ymax = slice
             sliced_image = np.array(self.dataset_orthophoto.ReadAsArray(xmin, ymin, xmax - xmin, ymax - ymin))
+            sliced_image = sliced_image[0:3, :, :]
             result = model(sliced_image)
-            self.__get_check_bbox_coords(result, sliced_image.shape[0], slice)   # adds the bbox coordinates to the list wrt orthophoto
+            self.__get_check_bbox_coords(result, sliced_image.shape[1], slice)   # adds the bbox coordinates to the list wrt orthophoto
 
 
     def __raster_to_array_converter(self):
