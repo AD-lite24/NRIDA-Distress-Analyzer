@@ -140,7 +140,7 @@ class PotholeAnalyzer():
             box = np.array(box)
             xmin, ymin, xmax, ymax, _, label = box
 
-            if label == 7:          # index label of the pothole in the in the model
+            if label == 4:          # index label of the pothole in the in the model
 
                 xmin *= image_dim
                 xmax *= image_dim
