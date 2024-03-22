@@ -14,9 +14,9 @@ dependencies:
   - boost-cpp=1.78.0=h8b082ac_1
   - bzip2=1.0.8=h1de35cc_0
   - c-ares=1.19.0=h6c40b1e_0
-  - ca-certificates=2022.12.7=h033912b_0
+  - ca-certificates=2024.3.11=hecd8cb5_0
   - cairo=1.16.0=h904041c_1014
-  - certifi=2022.12.7=pyhd8ed1ab_0
+  - certifi=2024.2.2=py311hecd8cb5_0
   - cfitsio=4.2.0=hd56cc12_0
   - click=8.0.4=py311hecd8cb5_0
   - click-plugins=1.1.1=pyhd3eb1b0_0
@@ -120,7 +120,7 @@ dependencies:
   - pcre2=10.40=h1c4e4bc_0
   - pexpect=4.8.0=pyhd3eb1b0_3
   - pickleshare=0.7.5=pyhd3eb1b0_1003
-  - pip=23.0.1=py311hecd8cb5_0
+  - pip=23.3.1=py311hecd8cb5_0
   - pixman=0.40.0=h9ed2024_1
   - platformdirs=2.5.2=py311hecd8cb5_0
   - poppler=23.03.0=hc777cac_1
@@ -179,6 +179,7 @@ dependencies:
       - pandas==2.0.0
       - pillow==9.5.0
       - protobuf==3.20.1
+      - py-cpuinfo==9.0.0
       - pytz==2023.3
       - pyyaml==6.0
       - requests==2.28.2
@@ -194,5 +195,6 @@ dependencies:
       - tqdm==4.65.0
       - typing-extensions==4.5.0
       - tzdata==2023.3
+      - ultralytics==8.1.29
       - urllib3==1.26.15
 prefix: /Users/adityadandwate/opt/anaconda3/envs/gdal_mde
